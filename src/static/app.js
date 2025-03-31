@@ -28,7 +28,16 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="participants">
             <strong>Participants:</strong>
             <ul>
-              ${details.participants.map(participant => `<li>${participant}</li>`).join("")}
+              ${details.participants
+                .map(
+                  (participant) => `
+                    <li class="participant-info">
+                      <span>${participant}</span>
+                      <button class="delete-btn" onclick="unregisterParticipant('${name}', '${participant}')">❌</button>
+                    </li>
+                  `
+                )
+                .join("")}
             </ul>
           </div>
         `;
@@ -47,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Handle form submission
+  // Update the signup form submission handler to refresh the activities list
   signupForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -68,6 +77,9 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+
+        // Refresh the activities list
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
@@ -86,6 +98,25 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error signing up:", error);
     }
   });
+
+  // Attach unregisterParticipant to the global window object
+  window.unregisterParticipant = async function (activityName, email) {
+    try {
+      const response = await fetch(`/activities/${encodeURIComponent(activityName)}/unregister?email=${encodeURIComponent(email)}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        fetchActivities(); // Refresh the activities list
+      } else {
+        const result = await response.json();
+        alert(result.detail || "Failed to unregister participant.");
+      }
+    } catch (error) {
+      console.error("Error unregistering participant:", error);
+      alert("An error occurred. Please try again.");
+    }
+  };
 
   // Initialize app
   fetchActivities();
